@@ -1,51 +1,112 @@
 #include "TrackingBox.h"
 
-// Определение статических переменных
-cv::Scalar TrackingBox::GreenColor = cv::Scalar(100, 255, 0); // Зеленый цвет
-cv::Scalar TrackingBox::RedColor = cv::Scalar(0, 0, 255); // Красный цвет
+// РћРїСЂРµРґРµР»РµРЅРёРµ СЃС‚Р°С‚РёС‡РµСЃРєРёС… РїРµСЂРµРјРµРЅРЅС‹С…
+cv::Scalar TrackingBox::GreenColor = cv::Scalar(100, 255, 0); // Р—РµР»РµРЅС‹Р№ С†РІРµС‚
+cv::Scalar TrackingBox::RedColor = cv::Scalar(0, 0, 255); // РљСЂР°СЃРЅС‹Р№ С†РІРµС‚
 
-// Конструктор, принимающий координаты (x, y) и размеры (w, h) прямоугольника
+// РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ, РїСЂРёРЅРёРјР°СЋС‰РёР№ РєРѕРѕСЂРґРёРЅР°С‚С‹ (x, y) Рё СЂР°Р·РјРµСЂС‹ (w, h) РїСЂСЏРјРѕСѓРіРѕР»СЊРЅРёРєР°
 TrackingBox::TrackingBox(int x, int y, int w, int h) : x(x), y(y), w(w), h(h) {}
 
-// Метод для получения формы (координаты и размеры) прямоугольника в виде кортежа
+// РњРµС‚РѕРґ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ С„РѕСЂРјС‹ (РєРѕРѕСЂРґРёРЅР°С‚С‹ Рё СЂР°Р·РјРµСЂС‹) РїСЂСЏРјРѕСѓРіРѕР»СЊРЅРёРєР° РІ РІРёРґРµ РєРѕСЂС‚РµР¶Р°
 std::tuple<int, int, int, int> TrackingBox::shape() const {
     return std::make_tuple(x, y, w, h);
 }
 
-// Метод для получения координат прямоугольника в виде вектора
+// РњРµС‚РѕРґ РґР»СЏ РїРѕР»СѓС‡РµРЅРёСЏ РєРѕРѕСЂРґРёРЅР°С‚ РїСЂСЏРјРѕСѓРіРѕР»СЊРЅРёРєР° РІ РІРёРґРµ РІРµРєС‚РѕСЂР°
 std::vector<int> TrackingBox::rectangle() const {
-    return { x, y, x + w, y + h }; // Возвращает вектор, содержащий координаты левого верхнего и правого нижнего углов
+    return { x, y, x + w, y + h }; // Р’РѕР·РІСЂР°С‰Р°РµС‚ РІРµРєС‚РѕСЂ, СЃРѕРґРµСЂР¶Р°С‰РёР№ РєРѕРѕСЂРґРёРЅР°С‚С‹ Р»РµРІРѕРіРѕ РІРµСЂС…РЅРµРіРѕ Рё РїСЂР°РІРѕРіРѕ РЅРёР¶РЅРµРіРѕ СѓРіР»РѕРІ
 }
 
-// Метод для создания массива TrackingBox из контуров
+// РњРµС‚РѕРґ РґР»СЏ СЃРѕР·РґР°РЅРёСЏ РјР°СЃСЃРёРІР° TrackingBox РёР· РєРѕРЅС‚СѓСЂРѕРІ
 std::vector<TrackingBox> TrackingBox::createBoxes(const std::vector<std::vector<cv::Point>>& contours) {
-    std::vector<TrackingBox> boxes; // Вектор для хранения созданных боксов
+    std::vector<TrackingBox> boxes; // Р’РµРєС‚РѕСЂ РґР»СЏ С…СЂР°РЅРµРЅРёСЏ СЃРѕР·РґР°РЅРЅС‹С… Р±РѕРєСЃРѕРІ
 
     for (const auto& cnt : contours) {
-        // Проверка площади контура на минимальное значение
+        // РџСЂРѕРІРµСЂРєР° РїР»РѕС‰Р°РґРё РєРѕРЅС‚СѓСЂР° РЅР° РјРёРЅРёРјР°Р»СЊРЅРѕРµ Р·РЅР°С‡РµРЅРёРµ
         if (cv::contourArea(cnt) > det_limArea) {
-            cv::Rect rect = cv::boundingRect(cnt); // Получаем ограничивающий прямоугольник для контура
-            // Добавляем новый TrackingBox на основе ограничивающего прямоугольника
+            cv::Rect rect = cv::boundingRect(cnt); // РџРѕР»СѓС‡Р°РµРј РѕРіСЂР°РЅРёС‡РёРІР°СЋС‰РёР№ РїСЂСЏРјРѕСѓРіРѕР»СЊРЅРёРє РґР»СЏ РєРѕРЅС‚СѓСЂР°
+            // Р”РѕР±Р°РІР»СЏРµРј РЅРѕРІС‹Р№ TrackingBox РЅР° РѕСЃРЅРѕРІРµ РѕРіСЂР°РЅРёС‡РёРІР°СЋС‰РµРіРѕ РїСЂСЏРјРѕСѓРіРѕР»СЊРЅРёРєР°
             boxes.emplace_back(rect.x, rect.y, rect.width, rect.height);
         }
     }
-    return boxes; // Возвращаем массив созданных боксов
+    return boxes; // Р’РѕР·РІСЂР°С‰Р°РµРј РјР°СЃСЃРёРІ СЃРѕР·РґР°РЅРЅС‹С… Р±РѕРєСЃРѕРІ
 }
 
-// Метод для создания гистограммы из областей прямоугольников
+// РњРµС‚РѕРґ РґР»СЏ СЃРѕР·РґР°РЅРёСЏ РіРёСЃС‚РѕРіСЂР°РјРјС‹ РёР· РѕР±Р»Р°СЃС‚РµР№ РїСЂСЏРјРѕСѓРіРѕР»СЊРЅРёРєРѕРІ
+
+void TrackingBox::processHistogram(const cv::Mat& frame) const {
+    // РџРѕР»СѓС‡Р°РµРј РєРѕРѕСЂРґРёРЅР°С‚С‹ Рё СЂР°Р·РјРµСЂС‹ Р±РѕРєСЃР°
+    auto [x, y, w, h] = this->shape();
+
+   
+    if (y + h >= frame.rows || y < 0) {
+        return; 
+    }
 
 
-// Метод для рисования боксов на изображении
+    // РР·РІР»РµРєР°РµРј РѕР±Р»Р°СЃС‚СЊ РёР·РѕР±СЂР°Р¶РµРЅРёСЏ
+    cv::Rect roi_top(x, y, w, h / 2);
+    cv::Rect roi_bot(x, y + h / 2, w, h / 2);
+
+
+    cv::Mat region_top = frame(roi_top);
+    cv::Mat region_bot = frame(roi_bot);
+
+    auto [b_hist_top, g_hist_top, r_hist_top] = computeHist(region_top);
+    auto [b_hist_bot, g_hist_bot, r_hist_bot] = computeHist(region_bot);
+
+    printMeanval(b_hist_top, g_hist_top, r_hist_top, "upper"); 
+    printMeanval(b_hist_bot, g_hist_bot, r_hist_bot, "lower");
+
+
+}
+
+std::tuple<cv::Mat, cv::Mat, cv::Mat> TrackingBox::computeHist(const cv::Mat& region)
+{
+    std::vector<cv::Mat> bgr_planes;
+    cv::split(region, bgr_planes);
+
+    int histSize = 256;
+    float range[] = { 0, 256 };
+    const float* histRange = { range };
+
+    cv::Mat b_hist, g_hist, r_hist;
+
+    // Р’С‹С‡РёСЃР»СЏРµРј РіРёСЃС‚РѕРіСЂР°РјРјС‹ РґР»СЏ РєР°Р¶РґРѕРіРѕ РєР°РЅР°Р»Р°
+    cv::calcHist(&bgr_planes[0], 1, 0, cv::Mat(), b_hist, 1, &histSize, &histRange, true, false); // Blue
+    cv::calcHist(&bgr_planes[1], 1, 0, cv::Mat(), g_hist, 1, &histSize, &histRange, true, false); // Green
+    cv::calcHist(&bgr_planes[2], 1, 0, cv::Mat(), r_hist, 1, &histSize, &histRange, true, false); // Red
+
+    // РќРѕСЂРјР°Р»РёР·СѓРµРј РіРёСЃС‚РѕРіСЂР°РјРјС‹
+    cv::normalize(b_hist, b_hist, 0, 1, cv::NORM_MINMAX);
+    cv::normalize(g_hist, g_hist, 0, 1, cv::NORM_MINMAX);
+    cv::normalize(r_hist, r_hist, 0, 1, cv::NORM_MINMAX);
+
+    return { b_hist, g_hist, r_hist };
+}
+
+void TrackingBox::printMeanval(const cv::Mat& b_hist, const cv::Mat& g_hist, const cv::Mat& r_hist, const std::string& half)
+{
+    double b_mean = cv::mean(b_hist)[0];
+    double g_mean = cv::mean(g_hist)[0];
+    double r_mean = cv::mean(r_hist)[0];
+
+
+    std::cout << "Mean color values in the " << half << " half of the tracking box: ";
+    std::cout << "Blue: " << b_mean << ", Green: " << g_mean << ", Red: " << r_mean << std::endl;
+}
+
+// РњРµС‚РѕРґ РґР»СЏ СЂРёСЃРѕРІР°РЅРёСЏ Р±РѕРєСЃРѕРІ РЅР° РёР·РѕР±СЂР°Р¶РµРЅРёРё
 cv::Mat TrackingBox::drawBoxes(cv::Mat& frame, const std::vector<TrackingBox>& boxes) {
     for (const auto& box : boxes) {
-        auto [x, y, w, h] = box.shape(); // Получаем координаты и размеры бокса
-        int cx = x + w / 2; // Находим центр бокса по оси X
-        int cy = y + h / 2; // Находим центр бокса по оси Y
+        auto [x, y, w, h] = box.shape(); // РџРѕР»СѓС‡Р°РµРј РєРѕРѕСЂРґРёРЅР°С‚С‹ Рё СЂР°Р·РјРµСЂС‹ Р±РѕРєСЃР°
+        int cx = x + w / 2; // РќР°С…РѕРґРёРј С†РµРЅС‚СЂ Р±РѕРєСЃР° РїРѕ РѕСЃРё X
+        int cy = y + h / 2; // РќР°С…РѕРґРёРј С†РµРЅС‚СЂ Р±РѕРєСЃР° РїРѕ РѕСЃРё Y
 
-        // Рисуем прямоугольник на изображении
+        // Р РёСЃСѓРµРј РїСЂСЏРјРѕСѓРіРѕР»СЊРЅРёРє РЅР° РёР·РѕР±СЂР°Р¶РµРЅРёРё
         cv::rectangle(frame, cv::Point(x, y), cv::Point(x + w, y + h), GreenColor, 2);
-        // Рисуем горизонтальную линию в центре бокса
+        // Р РёСЃСѓРµРј РіРѕСЂРёР·РѕРЅС‚Р°Р»СЊРЅСѓСЋ Р»РёРЅРёСЋ РІ С†РµРЅС‚СЂРµ Р±РѕРєСЃР°
         cv::line(frame, cv::Point(x, cy), cv::Point(x + w, cy), RedColor, 2);
     }
-    return frame; // Возвращаем модифицированное изображение
+    return frame; // Р’РѕР·РІСЂР°С‰Р°РµРј РјРѕРґРёС„РёС†РёСЂРѕРІР°РЅРЅРѕРµ РёР·РѕР±СЂР°Р¶РµРЅРёРµ
 }
