@@ -35,7 +35,7 @@ std::vector<TrackingBox> TrackingBox::trackingCreation(
         return {};
     }
 
-    // Create the IoU matrix
+  
     cv::Mat IoU(detections.size(), trackers.size(), CV_32F);
     for (size_t i = 0; i < detections.size(); ++i) {
         for (size_t j = 0; j < trackers.size(); ++j) {
@@ -73,7 +73,7 @@ std::tuple<int, int, int, int> TrackingBox::shape() const {
 }
 
 cv::Rect TrackingBox::rectangle() const {
-    return cv::Rect(x, y, w, h); // Return cv::Rect directly
+    return cv::Rect(x, y, w, h);
 }
 
 std::vector<TrackingBox> TrackingBox::createBoxes(const std::vector<std::vector<cv::Point>>& contours) {
