@@ -3,18 +3,15 @@
 #include "TrackingBox.h"
 #include "HungarianMethod.h"
 
-// Static member definitions
 cv::Scalar TrackingBox::GreenColor = cv::Scalar(100, 255, 0);
 cv::Scalar TrackingBox::RedColor = cv::Scalar(0, 0, 255);
 std::unordered_map<int, std::vector<cv::Mat>> TrackingBox::track_hist;
 std::unordered_map<int, std::vector<cv::Mat>> TrackingBox::del_hists;
 int TrackingBox::id_counter = 0;
 
-// TrackingBox constructor
 TrackingBox::TrackingBox(int x, int y, int w, int h)
     : x(x), y(y), w(w), h(h), id(id_counter++) { }
 
-// Implement the new trackingCreation method
 std::vector<TrackingBox> TrackingBox::trackingCreation(
     std::vector<TrackingBox>& detections,
     std::vector<TrackingBox>& trackers) {
@@ -46,11 +43,10 @@ std::vector<TrackingBox> TrackingBox::trackingCreation(
         }
     }
 
-    // Perform the matching
+   
     HungarianMethod hm;
     auto [matches, unmatched_det_ids, unmatched_trk_ids] = hm.match(IoU, trackers, detections);
 
-    // Update detections and trackers accordingly
     for (const auto& mtcd : matches) {
         detections[mtcd[0]].id = trackers[mtcd[1]].id;
         trackers[mtcd[1]] = detections[mtcd[0]];
@@ -60,7 +56,6 @@ std::vector<TrackingBox> TrackingBox::trackingCreation(
         trackers.push_back(detections[det_id]);
     }
 
-    // Remove unmatched trackers from the end to prevent index issues
     for (auto ut = unmatched_trk_ids.rbegin(); ut != unmatched_trk_ids.rend(); ++ut) {
         if (track_hist.find(trackers[*ut].id) != track_hist.end()) {
             del_hists[trackers[*ut].id] = std::move(track_hist[trackers[*ut].id]);
