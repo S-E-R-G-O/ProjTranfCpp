@@ -19,10 +19,7 @@ double HungarianAlgorithm::Solve(vector <vector<double> >& DistMatrix, vector<in
     int* assignment = new int[nRows];
     double cost = 0.0;
 
-    // Заполнение distMatrixIn. Учтите, что индекс "i + nRows * j".
-    // Здесь матрица затрат размером MxN определяется как массив с двойной точностью из N*M элементов. 
-    // В решающих функциях матрицы сохраняются в MATLAB-внутри в строковом порядке.
-    // (т.е. матрица [1 2; 3 4] будет храниться как вектор [1 3 2 4], А НЕ [1 2 3 4]).
+    
     for (unsigned int i = 0; i < nRows; i++)
         for (unsigned int j = 0; j < nCols; j++)
             distMatrixIn[i + nRows * j] = DistMatrix[i][j];
