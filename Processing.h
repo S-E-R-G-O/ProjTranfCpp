@@ -1,34 +1,33 @@
 #ifndef PROCESSING_H
 #define PROCESSING_H
 
-#include <opencv2/opencv.hpp>
-#include <iostream>
+#include "TrackingBox.h"   
+#include <opencv2/opencv.hpp> 
+#include <iostream> 
 
-using namespace cv;
-using namespace std;
 
-// Класс для обработки видеопотоков
+// Класс для обработки видео и обнаружения изменений между кадрами
 class Processing
 {
 public:
-    // Конструктор, который инициализирует видеопотоки из указанных имен файлов
-    Processing(const string& fileName1, const string& fileName2);
+    // Конструктор, принимающий имена файлов видео потоков
+    Processing(const std::string& fileName1, const std::string& fileName2);
 
     // Деструктор
     ~Processing();
 
-    // Метод для обнаружения изменений в видеопотоках
-    void detectedChanges();
+    // Метод для обнаружения изменений между двумя кадрами и возвращающий вектор отслеживаемых объектов
+    std::vector<TrackingBox> detectedChanges(cv::Mat&, cv::Mat&);
 
 private:
-    VideoCapture stream1; // Видеопоток 1
-    VideoCapture stream2; // Видеопоток 2
-    Mat previousFrame;    // Переменная для сохранения предыдущего кадра
-    Mat background;       // Фон, используемый для обработки
-    bool isFrame;         // Флаг, указывающий, был ли обработан первый кадр
+    cv::VideoCapture stream1; // Первый видеопоток
+    cv::VideoCapture stream2; // Второй видеопоток
+    cv::Mat previousFrame;    // Матрица для хранения предыдущего кадра
+    cv::Mat background;       // Матрица для хранения фона, который будет использоваться для сравнения
+    bool isFrame;         // Булевая переменная для отслеживания наличия кадра
 
-    // Метод для обработки текущего кадра
-    void processingFrame(Mat& frame, Mat& grayFrame);
+    // Метод для обработки одного кадра и получения объектов отслеживания
+    std::vector<TrackingBox> processingFrame(cv::Mat& frame, cv::Mat& grayFrame);
 };
 
 #endif // PROCESSING_H
