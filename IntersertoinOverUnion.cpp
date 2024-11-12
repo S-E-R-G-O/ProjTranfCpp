@@ -1,4 +1,4 @@
-﻿#include "IntersertoinOverUnion.h" 
+#include "IntersertoinOverUnion.h" 
 #include "HungarianAlgorithm.h" 
 #include "TrackingBox.h"
 #include <iostream> 
@@ -44,12 +44,13 @@ std::tuple<std::vector<std::vector<int>>, std::vector<int>, std::vector<int>> In
 
     // Выполняем венгерский алгоритм и получаем стоимость сопоставления
     double cost = HungAlgo.Solve(costMatrix, assignment);
-
+    //Тесты
     // Выводим информацию о сопоставлении
+    /*
     std::cout << "assignment: " << assignment.size() << std::endl;
     for (unsigned int x = 0; x < costMatrix.size(); x++)
         std::cout << x << " - " << assignment[x] << "\t";
-
+        */
     vector<vector<int>> matches; // Вектор для хранения сопоставлений
     vector<int> unmatched_trackers, unmatched_detections; // Векторы для хранения несопоставленных объектов
 
@@ -75,8 +76,9 @@ std::tuple<std::vector<std::vector<int>>, std::vector<int>, std::vector<int>> In
             unmatched_detections.push_back(d); // Если нет, добавляем в несопоставленные детекции
         }
     }
-
+    //Тесты
     // Выводим информацию о найденных сопоставлениях и несопоставленных объектах
+    /*
     std::cout << "\n----------" << std::endl;
     std::cout << "matches: " << matches.size() << std::endl;
     for (unsigned int x = 0; x < matches.size(); x++)
@@ -88,7 +90,7 @@ std::tuple<std::vector<std::vector<int>>, std::vector<int>, std::vector<int>> In
     for (unsigned int x = 0; x < unmatched_detections.size(); x++)
         std::cout << unmatched_detections[x] << "\t";
     std::cout << "\n--------END---------" << std::endl;
-
+    */
     // Возвращаем найденные сопоставления и несопоставленные объекты
     return { matches, unmatched_detections, unmatched_trackers };
 }
