@@ -83,10 +83,9 @@ vector<TrackingBox> Processing::processingFrame(cv::Mat& frame, cv::Mat& grayFra
     // Создаем боксы на основе обнаруженных контуров
     vector<TrackingBox> boxes = TrackingBox::createBoxes(contours);
 
-    // При необходимости можно дополнительно обрабатывать каждый бок
-    // for (const auto& box : boxes) {
-    //     box.processHistogram(frame); // Метод для обработки гистограммы (не активен)
-    // }
+
+
+    
     thresh.copyTo(grayFrame); // Копируем пороговое изображение в серый кадр
 
     return boxes;
