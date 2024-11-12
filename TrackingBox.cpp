@@ -1,5 +1,6 @@
 #include <unordered_map>
 #include <iostream>
+#include <numeric>
 #include "TrackingBox.h" // Заголовочный файл класса отслеживающего бокса
 #include "IntersertoinOverUnion.h" // Заголовочный файл для вычисления IoU
 
@@ -24,8 +25,7 @@ std::vector<TrackingBox> TrackingBox::trackingCreation(
     }
 
     if (detections.empty()) {
-        /*
-        Удаление всех_tracker'ов, если нет обнаружений (закомментировано)
+        // Удаление всех трекеров, если нет обнаружений
         for (auto& t : trackers) {
             if (track_hist.find(t.id) != track_hist.end()) {
                 del_hists[t.id] = std::move(track_hist[t.id]);
@@ -37,18 +37,18 @@ std::vector<TrackingBox> TrackingBox::trackingCreation(
             std::cout << "DEL " << t.id << " " << del_hists[t.id].size() << std::endl;
         }
         trackers.clear();
-        */
         return {}; // Возвращаем пустой вектор, если не найдено обнаружение
     }
-
-    // Отображение информации о обнаружениях и отслеживаемых боксер
+    //Тесты
+    // Отображение информации о обнаружениях и отслеживаемых боксерах
+     /*
     std::cout << "\n--------BEGIN--------" << std::endl;
     std::cout << "detection: " << detections.size() << std::endl;
     for (auto& _ : detections) _.Print();
 
     std::cout << "trackers: " << trackers.size() << std::endl;
     for (auto& _ : trackers) _.Print();
-
+    */
     // Создание матрицы для вычисления IoU
     cv::Mat IoU(trackers.size(), detections.size(), CV_64F);
     for (size_t t = 0; t < trackers.size(); ++t) {
@@ -56,19 +56,21 @@ std::vector<TrackingBox> TrackingBox::trackingCreation(
             IoU.at<double>(t, d) = IntersectOverUnion::intersectionOverUnion(trackers[t].rectangle(), detections[d].rectangle());
         }
     }
-
+    //Тесты
     // Вывод результата матрицы IoU
+    /*
     std::cout << "IoU: " << IoU.size() << std::endl;
     std::cout.setf(std::ios::fixed);
     std::cout.precision(2);
-
+    */
+    /*
     for (int i = 0; i < IoU.rows; i++) {
         for (int j = 0; j < IoU.cols; j++) {
             std::cout << IoU.at<double>(i, j) << ",\t";
         }
         std::cout << std::endl;
     }
-
+    */
     IntersectOverUnion io; // Создание объекта для метода венгерского
     auto [matches, unmatched_det_ids, unmatched_trk_ids] = io.match(IoU, trackers, detections); // Сопоставление
 
@@ -86,11 +88,14 @@ std::vector<TrackingBox> TrackingBox::trackingCreation(
     // Удаление несопоставленных отслеживаемых боксов
     for (auto ut = unmatched_trk_ids.rbegin(); ut != unmatched_trk_ids.rend(); ++ut) {
         if (track_hist.find(trackers[*ut].id) != track_hist.end()) {
-            del_hists[trackers[*ut].id] = std::move(track_hist[trackers[*ut].id]);
-            track_hist.erase(trackers[*ut].id);
+            del_hists[trackers[*ut].id] = std::move(track_hist[trackers[*ut].id]); // Сохраняем историю
+            track_hist.erase(trackers[*ut].id); // Удаляем из текущего хранилища истории
+        }
+        else {
+            del_hists[trackers[*ut].id] = {}; // Если не было истории, сохраняем пустой вектор
         }
         std::cout << "DEL " << trackers[*ut].id << " " << del_hists[trackers[*ut].id].size() << std::endl;
-        trackers.erase(trackers.begin() + *ut);
+        trackers.erase(trackers.begin() + *ut); // Удаляем трекер
     }
 
     return trackers; // Возвращение обновленных отслеживаемых боксов
@@ -119,9 +124,10 @@ std::vector<TrackingBox> TrackingBox::createBoxes(const std::vector<std::vector<
     return boxes; // Возвращаем все созданные боксы
 }
 
+
 // Обработка гистограмм для визуализации цвета в боксе
-void TrackingBox::processHistogram(const cv::Mat& frame) const {
-    auto [x, y, w, h] = this->shape(); // Получаем положение и размеры бокса
+void TrackingBox::processHistogram(const cv::Mat& frame) {
+    auto [x, y, w, h] = this->shape(); // Получаем параметры бокса
 
     // Проверка выхода за пределы изображения
     if (y + h >= frame.rows || y < 0) {
@@ -138,9 +144,38 @@ void TrackingBox::processHistogram(const cv::Mat& frame) const {
     auto [b_hist_top, g_hist_top, r_hist_top] = computeHist(region_top);
     auto [b_hist_bot, g_hist_bot, r_hist_bot] = computeHist(region_bot);
 
-    // Вывод средних значений гистограммы
-    printMeanval(b_hist_top, g_hist_top, r_hist_top, "upper");
-    printMeanval(b_hist_bot, g_hist_bot, r_hist_bot, "lower");
+    // Сохранение новой гистограммы
+    cv::Mat new_hist_top = (b_hist_top + g_hist_top + r_hist_top) / 3.0; // предполагаемый расчёт новой гистограммы
+    cv::Mat new_hist_bot = (b_hist_bot + g_hist_bot + r_hist_bot) / 3.0; // предполагаемый расчёт новой гистограммы
+
+    // Сохраняем новую гистограмму
+    if (track_hist.find(this->id) != track_hist.end()) {
+        //std::cout << "YES " << this->id << std::endl;
+        track_hist[this->id].push_back(new_hist_top);
+        track_hist[this->id].push_back(new_hist_bot);
+    }
+    else {
+        std::cout << "NEW " << this->id << std::endl;
+        auto hist_weight_top = compareHistograms(new_hist_top);
+        auto hist_weight_bot = compareHistograms(new_hist_bot);
+
+        if (!hist_weight_top.empty()) {
+            for (const auto& [hw_id, weights] : hist_weight_top) {
+                double mean_value = std::accumulate(weights.begin(), weights.end(), 0.0) / weights.size();
+                std::cout << "ВЕРХНЯЯ ГИСТОГРАММА: " << hw_id << ": " << mean_value << std::endl;
+            }
+        }
+
+        track_hist[this->id].push_back(new_hist_top);
+
+        if (!hist_weight_bot.empty()) {
+            for (const auto& [hw_id, weights] : hist_weight_bot) {
+                double mean_value = std::accumulate(weights.begin(), weights.end(), 0.0) / weights.size();
+                std::cout << "НИЖНЯЯ ГИСТОГРАММА: " << hw_id << ": " << mean_value << std::endl;
+            }
+        }
+        track_hist[this->id].push_back(new_hist_bot);
+    }
 }
 
 // Вычисление гистограмм для трех каналов цвета
@@ -155,14 +190,18 @@ std::tuple<cv::Mat, cv::Mat, cv::Mat> TrackingBox::computeHist(const cv::Mat& re
     cv::Mat b_hist, g_hist, r_hist; // Гистограммы для каждого канала
 
     // Вычисление гистограммы для каждого канала
-    cv::calcHist(&bgr_planes[0], 1, 0, cv::Mat(), b_hist, 1, &histSize, &histRange, true, false);
-    cv::calcHist(&bgr_planes[1], 1, 0, cv::Mat(), g_hist, 1, &histSize, &histRange, true, false);
-    cv::calcHist(&bgr_planes[2], 1, 0, cv::Mat(), r_hist, 1, &histSize, &histRange, true, false);
-
-    // Нормализация гистограмм
-    cv::normalize(b_hist, b_hist, 0, 1, cv::NORM_MINMAX);
-    cv::normalize(g_hist, g_hist, 0, 1, cv::NORM_MINMAX);
-    cv::normalize(r_hist, r_hist, 0, 1, cv::NORM_MINMAX);
+    if (!bgr_planes[0].empty()) {
+        cv::calcHist(&bgr_planes[0], 1, 0, cv::Mat(), b_hist, 1, &histSize, &histRange, true, false);
+        cv::normalize(b_hist, b_hist, 0, 1, cv::NORM_MINMAX);
+    }
+    if (!bgr_planes[1].empty()) {
+        cv::calcHist(&bgr_planes[1], 1, 0, cv::Mat(), g_hist, 1, &histSize, &histRange, true, false);
+        cv::normalize(g_hist, g_hist, 0, 1, cv::NORM_MINMAX);
+    }
+    if (!bgr_planes[2].empty()) {
+        cv::calcHist(&bgr_planes[2], 1, 0, cv::Mat(), r_hist, 1, &histSize, &histRange, true, false);
+        cv::normalize(r_hist, r_hist, 0, 1, cv::NORM_MINMAX);
+    }
 
     return { b_hist, g_hist, r_hist }; // Возвращаем гистограммы
 }
@@ -173,8 +212,10 @@ void TrackingBox::printMeanval(const cv::Mat& b_hist, const cv::Mat& g_hist, con
     double g_mean = cv::mean(g_hist)[0]; // Среднее значение зеленого канала
     double r_mean = cv::mean(r_hist)[0]; // Среднее значение красного канала
 
+    double av_mean = (b_mean + g_mean + r_mean) / 3.0;
+
     std::cout << "Mean color values in the " << half << " half of the tracking box: ";
-    std::cout << "Blue: " << b_mean << ", Green: " << g_mean << ", Red: " << r_mean << std::endl; // Вывод значений
+    std::cout << "Average: "<< av_mean << std::endl; // Вывод значений
 }
 // Реализация сравнения гистограмм объектов 
 
