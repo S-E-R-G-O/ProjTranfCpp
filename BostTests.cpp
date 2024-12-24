@@ -216,7 +216,7 @@ BOOST_AUTO_TEST_SUITE_END()
 // Тесты для алгоритма Венгерского (Hungarian Algorithm) ===================================================================================
 BOOST_AUTO_TEST_SUITE(HungarianTest)
 
-// Тест для матрицы 2x2: Проверяет алгоритм с базовой матрицей расстояний 2x2 и проверяет назначение и стоимость
+// Тест для матрицы 2x2
 BOOST_AUTO_TEST_CASE(hungarian_algorithm_2x2_test) {
     HungarianAlgorithm hungarian;
     std::vector<std::vector<double>> distMatrix = {
