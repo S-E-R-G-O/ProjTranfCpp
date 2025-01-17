@@ -150,72 +150,94 @@ void TrackingBox::processHistogram(const cv::Mat& frame) {
 
     // Сохраняем новую гистограмму
     if (track_hist.find(this->id) != track_hist.end()) {
-        //std::cout << "YES " << this->id << std::endl;
         track_hist[this->id].push_back(new_hist_top);
         track_hist[this->id].push_back(new_hist_bot);
     }
     else {
         std::cout << "NEW " << this->id << std::endl;
+
+        // Сравниваем с существующими ID
         auto hist_weight_top = compareHistograms(new_hist_top);
         auto hist_weight_bot = compareHistograms(new_hist_bot);
+        // Ищем ID с максимальным значением для верхней гистограммы
+        int best_id_top = -1;
+        double best_weight_top = -1.0;
 
         if (!hist_weight_top.empty()) {
             for (const auto& [hw_id, weights] : hist_weight_top) {
                 double mean_value = std::accumulate(weights.begin(), weights.end(), 0.0) / weights.size();
                 std::cout << "ВЕРХНЯЯ ГИСТОГРАММА: " << hw_id << ": " << mean_value << std::endl;
+
+                // Сравниваем и находим лучший ID
+                if (mean_value > best_weight_top) {
+                    best_weight_top = mean_value;
+                    best_id_top = hw_id;
+                }
             }
         }
 
-        track_hist[this->id].push_back(new_hist_top);
+        // Аналогично для нижней гистограммы
+        int best_id_bot = -1;
+        double best_weight_bot = -1.0;
 
         if (!hist_weight_bot.empty()) {
             for (const auto& [hw_id, weights] : hist_weight_bot) {
                 double mean_value = std::accumulate(weights.begin(), weights.end(), 0.0) / weights.size();
                 std::cout << "НИЖНЯЯ ГИСТОГРАММА: " << hw_id << ": " << mean_value << std::endl;
+
+                // Сравниваем и находим лучший ID
+                if (mean_value > best_weight_bot) {
+                    best_weight_bot = mean_value;
+                    best_id_bot = hw_id;
+                }
             }
         }
+
+        // Если найден общий лучший ID, переприсваиваем
+        if (best_id_top != -1 && best_id_top == best_id_bot /* || best_id_top > best_id_bot || best_id_bot > best_id_top*/) {
+            std::cout << "Обновление ID: " << this->id << " на " << best_id_top << std::endl;
+            this->id = best_id_top; // Переприсваиваем ID
+        }
+
+        // Выводим информацию о наиболее похожих объектах
+        if (best_id_top != -1) {
+            std::cout << "Наиболее похожий объект для верхней гистограммы: " << best_id_top << " с весом: " << best_weight_top << std::endl;
+        }
+        if (best_id_bot != -1) {
+            std::cout << "Наиболее похожий объект для нижней гистограммы: " << best_id_bot << " с весом: " << best_weight_bot << std::endl;
+        }
+
         track_hist[this->id].push_back(new_hist_bot);
     }
 }
 
 // Вычисление гистограмм для трех каналов цвета
 std::tuple<cv::Mat, cv::Mat, cv::Mat> TrackingBox::computeHist(const cv::Mat& region) {
-    std::vector<cv::Mat> bgr_planes; // Вектор для цветовых каналов
-    cv::split(region, bgr_planes); // Разделение изображения на каналы
+    std::vector<cv::Mat> bgr_planes;
+    cv::split(region, bgr_planes); // Разделение на каналы
 
+    cv::Mat histograms[3]; // Массив для хранения гистограмм
     int histSize = 256; // Размер гистограммы
     float range[] = { 0, 256 }; // Диапазон значений
-    const float* histRange = { range }; // Указатель на диапазон
+    const float* histRange = { range }; 
 
-    cv::Mat b_hist, g_hist, r_hist; // Гистограммы для каждого канала
-
-    // Вычисление гистограммы для каждого канала
-    if (!bgr_planes[0].empty()) {
-        cv::calcHist(&bgr_planes[0], 1, 0, cv::Mat(), b_hist, 1, &histSize, &histRange, true, false);
-        cv::normalize(b_hist, b_hist, 0, 1, cv::NORM_MINMAX);
-    }
-    if (!bgr_planes[1].empty()) {
-        cv::calcHist(&bgr_planes[1], 1, 0, cv::Mat(), g_hist, 1, &histSize, &histRange, true, false);
-        cv::normalize(g_hist, g_hist, 0, 1, cv::NORM_MINMAX);
-    }
-    if (!bgr_planes[2].empty()) {
-        cv::calcHist(&bgr_planes[2], 1, 0, cv::Mat(), r_hist, 1, &histSize, &histRange, true, false);
-        cv::normalize(r_hist, r_hist, 0, 1, cv::NORM_MINMAX);
+    // Вычисление и нормализация гистограмм для каждого канала
+    for (int i = 0; i < 3; ++i) {
+        if (!bgr_planes[i].empty()) {
+            cv::calcHist(&bgr_planes[i], 1, 0, cv::Mat(), histograms[i], 1, &histSize, &histRange, true, false);
+            cv::normalize(histograms[i], histograms[i], 0, 1, cv::NORM_MINMAX);
+        }
     }
 
-    return { b_hist, g_hist, r_hist }; // Возвращаем гистограммы
+    return { histograms[0], histograms[1], histograms[2] }; // Возвращаем гистограммы
 }
 
 // Вывод средних значений для гистограммы
 void TrackingBox::printMeanval(const cv::Mat& b_hist, const cv::Mat& g_hist, const cv::Mat& r_hist, const std::string& half) {
-    double b_mean = cv::mean(b_hist)[0]; // Среднее значение синего канала
-    double g_mean = cv::mean(g_hist)[0]; // Среднее значение зеленого канала
-    double r_mean = cv::mean(r_hist)[0]; // Среднее значение красного канала
-
-    double av_mean = (b_mean + g_mean + r_mean) / 3.0;
+    double av_mean = (cv::mean(b_hist)[0] + cv::mean(g_hist)[1] + cv::mean(r_hist)[2]) / 3.0;
 
     std::cout << "Mean color values in the " << half << " half of the tracking box: ";
-    std::cout << "Average: "<< av_mean << std::endl; // Вывод значений
+    std::cout << "Average: " << av_mean << std::endl; // Вывод значений
 }
 // Реализация сравнения гистограмм объектов 
 
