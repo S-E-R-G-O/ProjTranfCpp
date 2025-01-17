@@ -1,8 +1,12 @@
-﻿#ifndef INTERSECTION_H
+#ifndef INTERSECTION_H
 #define INTERSECTION_H
 
 #include <vector>  
 #include <opencv2/core.hpp>  
+#include <iostream>
+#include <algorithm>
+#include <numeric>
+#include <limits>
 
 using namespace std; // Использование стандартного пространства имен для упрощения кода
 
@@ -12,6 +16,9 @@ class TrackingBox;
 
 class IntersectOverUnion
 {
+private:
+    double iou_threshold_;
+
 public:
     // Конструктор класса HungarianMethod, который принимает пороговое значение для IoU (Intersection over Union)
     IntersectOverUnion(double iou_threshold = 0.3f);
@@ -23,8 +30,7 @@ public:
     // Статический метод для вычисления метрики IoU между двумя прямоугольниками
     static double intersectionOverUnion(const cv::Rect& a, const cv::Rect& b);
 
-private:
-    double iou_threshold_; 
+
 };
 
 #endif // INTERSECTION_H
