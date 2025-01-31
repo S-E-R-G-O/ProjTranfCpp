@@ -1,5 +1,5 @@
 #include "Processing.h"
-#include "IntersertoinOverUnion.h"
+
 
 // Конструктор класса Processing
 Processing::Processing(const std::string& fileName1, const std::string& fileName2)
@@ -53,31 +53,35 @@ std::vector<TrackingBox> Processing::processingFrame(cv::Mat& frame, cv::Mat& gr
 {
     cv::Mat difference, thresh, dilated, frameBlur;
 
-    // Проверяем, инициализировано ли фоновое изображение
+    // Инициализация фонового изображения
     if (background.empty())
     {
-        background.create(grayFrame.size(), CV_32F);
         grayFrame.convertTo(background, CV_32F);
     }
     else
     {
+        // Обновляем фоновое изображение
         cv::accumulateWeighted(grayFrame, background, 0.15);
     }
 
-    cv::Mat backgroundupd;
-    background.convertTo(backgroundupd, CV_8U);
-    cv::absdiff(backgroundupd, grayFrame, difference);
+    // Преобразуем фон в 8-битный формат и вычисляем разность
+    cv::Mat backgroundUpd;
+    background.convertTo(backgroundUpd, CV_8U);
+    cv::absdiff(backgroundUpd, grayFrame, difference);
 
+    // Применяем пороговую обработку
     cv::threshold(difference, thresh, 30, 255, cv::THRESH_BINARY);
     cv::dilate(thresh, dilated, cv::Mat(), cv::Point(-1, -1), 4);
-    cv::GaussianBlur(dilated, frameBlur, cv::Size(5, 5), 0, 0);
+    cv::GaussianBlur(dilated, frameBlur, cv::Size(5, 5), 0);
 
+    // Поиск контуров
     std::vector<std::vector<cv::Point>> contours;
     cv::findContours(frameBlur, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
-    // Создаем боксы на основе обнаруженных контуров
+    // Создание боксов на основе обнаруженных контуров
     std::vector<TrackingBox> boxes = TrackingBox::createBoxes(contours);
 
+    // Копируем пороговое изображение в grayFrame
     thresh.copyTo(grayFrame);
 
     return boxes;
