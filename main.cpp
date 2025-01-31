@@ -17,7 +17,7 @@ int main() {
             tracking = TrackingBox::trackingCreation(detection, tracking);
             //строим гистограмы для отслеживаемых объектов
             for (auto& box : tracking) {
-                box.processHistogram(frame); // это будет работать, так как box - не const
+                box.processHistogram(frame); 
             }
 
             TrackingBox::drawBoxes(frame, detection);
