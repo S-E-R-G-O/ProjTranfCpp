@@ -61,7 +61,7 @@ std::vector<TrackingBox> Processing::processingFrame(cv::Mat& frame, cv::Mat& gr
     else
     {
         // Обновляем фоновое изображение
-        cv::accumulateWeighted(grayFrame, background, 0.15);
+        cv::accumulateWeighted(grayFrame, background, 0.12);
     }
 
     // Преобразуем фон в 8-битный формат и вычисляем разность
