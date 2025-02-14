@@ -7,7 +7,8 @@
 #include <tuple>
 #include <string>
 #include <unordered_map>
-#include <iostream>
+#include <numeric>
+
 
 // Класс TrackingBox предназначен для представления ограничивающего прямоугольника,
 // в котором производится отслеживание объектов.
@@ -21,7 +22,7 @@ private:
 public:
     static cv::Scalar GreenColor;
     static cv::Scalar RedColor;
-    static const int det_limArea = 6000; // Минимальная площадь для детекции
+    static const int det_limArea = 8000; // Минимальная площадь для детекции
 
     TrackingBox(int x, int y, int w, int h);
 
@@ -52,8 +53,6 @@ public:
     // Сравнение гистограмм
     static std::unordered_map<int, std::vector<double>> compareHistograms(const cv::Mat& new_hist);
 
-    // Печать средних значений гистограммы
-    static void printMeanval(const cv::Mat& b_hist, const cv::Mat& g_hist, const cv::Mat& r_hist, const std::string& half);
 
     // Вычисление гистограммы для заданного региона
     static std::tuple<cv::Mat, cv::Mat, cv::Mat> computeHist(const cv::Mat& region);
